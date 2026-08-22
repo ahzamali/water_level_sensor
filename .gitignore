@@ -1,0 +1,15 @@
+# PlatformIO build output directory
+.pio/
+
+# VS Code workspace settings
+.vscode/.browsers/
+.vscode/compile_commands.json
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch/
+
+# Operating system / IDE files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

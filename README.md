@@ -28,7 +28,7 @@ A modular, high-accuracy ESP8266 NodeMCU firmware built with **PlatformIO**. It 
 ## MQTT Command & Telemetry Specification
 
 ### MQTT Broker Defaults
-- **Host**: `192.168.211.175` (or hostname `trailblazer`)
+- **Host**: `YOUR_MQTT_BROKER_IP` (e.g., `192.168.1.100`)
 - **Port**: `1883`
 
 ### 1. Remote OTA & Maintenance Control Topic
@@ -44,10 +44,10 @@ A modular, high-accuracy ESP8266 NodeMCU firmware built with **PlatformIO**. It 
 #### Example Command Line Usage (`mosquitto_pub`):
 ```bash
 # Wake up sensor remotely for 10 minutes to update firmware via Web UI
-mosquitto_pub -h 192.168.211.175 -t "roof/tank_water/control" -m "ota"
+mosquitto_pub -h YOUR_MQTT_BROKER_IP -t "roof/tank_water/control" -m "ota"
 
 # Return to sleep immediately
-mosquitto_pub -h 192.168.211.175 -t "roof/tank_water/control" -m "sleep"
+mosquitto_pub -h YOUR_MQTT_BROKER_IP -t "roof/tank_water/control" -m "sleep"
 ```
 
 ---

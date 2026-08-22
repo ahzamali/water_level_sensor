@@ -13,11 +13,11 @@
 
 
 // WIFI related settings
-const char* ssid = "nayainternet"; // Enter your WiFi name
-const char* password =  "#!march1979"; // Enter WiFi password
+const char* ssid = "YOUR_WIFI_SSID"; // Enter your WiFi name
+const char* password =  "YOUR_WIFI_PASSWORD"; // Enter WiFi password
 
-const char* mqttServer1 = "192.168.211.175";
-const char* mqttServer2 = "trailblazer";
+const char* mqttServer1 = "YOUR_MQTT_BROKER_IP";
+const char* mqttServer2 = "YOUR_MQTT_BROKER_HOSTNAME";
 
 const int mqttPort = 1883;
 const char* mqttUser = "";

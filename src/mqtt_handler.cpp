@@ -4,7 +4,7 @@
 
 static WiFiClient esp_net_client;
 static PubSubClient mqtt_client(esp_net_client);
-static String current_broker = "192.168.211.175";
+static String current_broker = "YOUR_MQTT_BROKER_IP";
 static uint16_t current_port = 1883;
 static unsigned long last_reconnect_attempt = 0;
 

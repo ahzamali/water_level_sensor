@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-void initMqtt(const char* broker_host = "192.168.211.175", uint16_t port = 1883);
+void initMqtt(const char* broker_host = "YOUR_MQTT_BROKER_IP", uint16_t port = 1883);
 void handleMqtt();
 bool isMqttConnected();
 void publishMqttTelemetry(long distance_cm, long water_level_cm, float percent, float temp_c, float hum_pct);

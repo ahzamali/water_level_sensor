@@ -145,7 +145,7 @@ void setup() {
   Serial.println("setup: HTTP server started.");
 
   initEnvSensors(D5);
-  initMqtt("192.168.211.175", 1883);
+  initMqtt("YOUR_MQTT_BROKER_IP", 1883);
 
   // Only start 3-minute stay-awake window on Cold Boot / Reset button press (not on Deep Sleep wake-up)
   rst_info* rstInfo = ESP.getResetInfoPtr();

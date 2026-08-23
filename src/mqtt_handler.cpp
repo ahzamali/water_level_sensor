@@ -94,6 +94,7 @@ void initMqtt(const char* broker_host, uint16_t port) {
     current_broker = broker_host;
   }
   current_port = port;
+  mqtt_client.setBufferSize(512); // Allow longer debug payloads (default is 256 bytes)
   mqtt_client.setServer(current_broker.c_str(), current_port);
   mqtt_client.setCallback(mqttCallback);
 }
@@ -159,6 +160,7 @@ void publishMqttTelemetry(long distance_cm, long water_level_cm, float percent, 
       mqtt_client.publish("roof/sensor/humidity", buf, true);
     }
 
+    mqtt_client.loop(); // Drain TCP receive buffer after batch publish to keep connection alive
     Serial.println("MQTT Published: Water Level = " + String(percent) + "%, Dist = " + String(distance_cm) + " cm");
   }
 }

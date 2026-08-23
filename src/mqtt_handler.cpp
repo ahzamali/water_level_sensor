@@ -4,7 +4,7 @@
 
 static WiFiClient esp_net_client;
 static PubSubClient mqtt_client(esp_net_client);
-static String current_broker = "YOUR_MQTT_BROKER_IP";
+static String current_broker = "192.168.211.175";
 static uint16_t current_port = 1883;
 static unsigned long last_reconnect_attempt = 0;
 
@@ -71,12 +71,14 @@ static void mqttCallback(char* topic, byte* payload, unsigned int length) {
     Serial.println("MQTT: Stay-awake / OTA mode activated for 10 minutes!");
     if (mqtt_client.connected()) {
       mqtt_client.publish("roof/log", "OTA Mode Active: Staying awake for 10 minutes for Web UI updates");
+      mqtt_client.publish("roof/tank_water/control", "", true); // Clear retained message on broker
     }
   } else if (strcasecmp(message, "sleep") == 0) {
     setStayAwake(false, 0);
     Serial.println("MQTT: Sleep mode requested via MQTT");
     if (mqtt_client.connected()) {
       mqtt_client.publish("roof/log", "Sleep Requested: Entering Deep Sleep");
+      mqtt_client.publish("roof/tank_water/control", "", true); // Clear retained message on broker
     }
   } else if (strcasecmp(message, "debug_on") == 0 || strcasecmp(message, "debug_enable") == 0) {
     setMqttDebugEnabled(true);
@@ -110,6 +112,8 @@ static bool reconnectMqtt() {
     Serial.println("MQTT connected to broker: " + current_broker);
     mqtt_client.subscribe("roof/tank_water/control");
     mqtt_client.publish("roof/log", "ESP8266 Water Sensor Connected");
+    delay(100); // Allow broker time to push retained message into TCP buffer
+    mqtt_client.loop(); // Drain TCP buffer: fires mqttCallback for retained "ota" immediately
     return true;
   }
   return false;

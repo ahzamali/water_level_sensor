@@ -145,7 +145,7 @@ void setup() {
   Serial.println("setup: HTTP server started.");
 
   initEnvSensors(D5);
-  initMqtt("YOUR_MQTT_BROKER_IP", 1883);
+  initMqtt("192.168.211.175", 1883);
 
   // Only start 3-minute stay-awake window on Cold Boot / Reset button press (not on Deep Sleep wake-up)
   rst_info* rstInfo = ESP.getResetInfoPtr();
@@ -158,6 +158,8 @@ void setup() {
 
   pinMode(trigger, OUTPUT);
   pinMode(echo, INPUT);
+  digitalWrite(trigger, LOW);
+  delay(50);
 
   digitalWrite(LED_BUILTIN, LOW);
   delay(100);
@@ -179,11 +181,8 @@ long readSingleDistanceCm() {
   if (d <= 0) return -1;
 
   float dist = (d / 2.0) * (String(speed_of_sound).toFloat() / 10000.0);
-  long tank_max = String(tank_bottom_distance).toInt();
+  if (dist <= 0.0f) return -1;
 
-  if (!isSampleValid(dist, tank_max)) {
-    return -1;
-  }
   return (long)dist;
 }
 

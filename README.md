@@ -15,10 +15,9 @@ A modular, high-accuracy ESP8266 NodeMCU firmware built with **PlatformIO**. It 
   - Live telemetry cards for distance, water depth, percentage fill bar, temperature, humidity, and RSSI.
   - Interactive Web OTA uploader (`.bin` file upload with live progress bar).
   - Wi-Fi network credential reset button.
-- **Adaptive Battery-Saving Sleep Schedule**:
-  - **NTP Time Sync**: Automatically syncs local time via NTP (`pool.ntp.org`, IST UTC+5:30).
-  - **Daytime Mode (5:30 AM - 11:59 PM)**: 1-minute sleep interval for active water consumption tracking.
-  - **Nighttime Battery-Saver Mode (12:00 AM - 5:29 AM)**: 15-minute sleep interval (reduces overnight battery draw by >93%).
+- **1-Minute Deep Sleep Cycle**:
+  - Automatically enters 1-minute (`60` seconds) Deep Sleep after each telemetry publish cycle.
+  - Automatically skips the 3-minute boot window on routine timer wake-ups to save power.
 - **MQTT Remote OTA Control & Telemetry**:
   - Publishes real-time telemetry to MQTT broker.
   - Listen to MQTT control commands to activate **Stay-Awake / OTA Maintenance Mode** remotely while in Deep Sleep.

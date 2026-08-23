@@ -268,33 +268,12 @@ void loop() {
       delay(100);
     }
   } else {
-    // Adaptive sleep duration based on time of day (NTP)
-    uint32_t sleep_sec = 60; // default 1 min
-    time_t now = time(nullptr);
-    struct tm* timeinfo = localtime(&now);
-
-    if (timeinfo && timeinfo->tm_year > 120) { // Valid NTP time acquired (> year 2020)
-      int minOfDay = timeinfo->tm_hour * 60 + timeinfo->tm_min;
-      // 5:30 AM = 330 min, 11:59 PM = 1439 min
-      if (minOfDay >= 330 && minOfDay <= 1439) {
-        sleep_sec = 60; // 1 minute sleep during daytime (5:30 AM - 11:59 PM)
-        Serial.printf("NTP Time %02d:%02d -> Daytime active. Sleep set to 1 min (60s).\n", timeinfo->tm_hour, timeinfo->tm_min);
-      } else {
-        sleep_sec = 900; // 15 minutes sleep during nighttime (12:00 AM - 5:29 AM)
-        Serial.printf("NTP Time %02d:%02d -> Nighttime active. Sleep set to 15 min (900s).\n", timeinfo->tm_hour, timeinfo->tm_min);
-      }
-    } else {
-      Serial.println("NTP Time not yet synced -> Defaulting sleep to 1 min (60s).");
-    }
-
+    // Deep sleep for constant 1 minute (60 seconds)
     if (isMqttDebugEnabled()) {
-      char dbgBuf[128];
-      snprintf(dbgBuf, sizeof(dbgBuf), "ADAPTIVE SLEEP: Entering Deep Sleep for %u seconds.", sleep_sec);
-      publishMqttDebug(dbgBuf);
+      publishMqttDebug("Entering Deep Sleep for 1 minute (60 sec)");
     }
-
-    Serial.printf("Entering Deep Sleep for %u seconds...\n", sleep_sec);
-    ESP.deepSleep((uint64_t)sleep_sec * 1000000ULL);
+    Serial.println("Entering Deep Sleep for 1 minute (60 sec)...");
+    ESP.deepSleep(60e6);
   }
 }
 #endif

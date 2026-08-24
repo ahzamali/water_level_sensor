@@ -37,7 +37,7 @@ void initWebServer(std::unique_ptr<ESP8266WebServer>& server_ptr) {
 
     EnvReadings env = readEnvSensors();
 
-    DynamicJsonBuffer jsonBuffer;
+    StaticJsonBuffer<640> jsonBuffer;  // Stack-allocated: freed on lambda return, no heap fragmentation
     JsonObject& root = jsonBuffer.createObject();
     root["distance_to_water"] = distance_to_water;
     root["water_level"] = water_level;
@@ -72,9 +72,10 @@ void initWebServer(std::unique_ptr<ESP8266WebServer>& server_ptr) {
     root["wifi_rssi"] = WiFi.RSSI();
     root["wifi_ssid"] = WiFi.SSID();
     root["ip_address"] = WiFi.localIP().toString();
+    root["firmware_version"] = FIRMWARE_VERSION;
 
-    String response;
-    root.printTo(response);
+    char response[640];  // Stack-allocated: avoids heap String churn on every poll
+    root.printTo(response, sizeof(response));
     server_ref->send(200, "application/json", response);
   });
 

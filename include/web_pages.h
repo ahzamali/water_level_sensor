@@ -65,7 +65,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       <h1>Water Level Sensor</h1>
       <p style="color: var(--text-muted); font-size: 0.9rem;">ESP8266 Live Telemetry & Control</p>
     </div>
-    <div class="badge"><span class="badge-dot"></span> Online</div>
+    <div style="display:flex; align-items:center; gap:0.75rem;">
+      <span id="fwVersion" style="color:var(--text-muted); font-size:0.8rem;"></span>
+      <div class="badge"><span class="badge-dot"></span> Online</div>
+    </div>
   </div>
 
   <div class="tank-container">
@@ -183,6 +186,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .then(data => {
           document.getElementById('distVal').innerText = data.distance_to_water + ' cm';
           document.getElementById('levelVal').innerText = data.water_level + ' cm';
+
+          if(data.firmware_version) {
+            document.getElementById('fwVersion').innerText = 'fw v' + data.firmware_version;
+          }
           
           if(data.temperature !== null && !isNaN(data.temperature)) {
             document.getElementById('tempVal').innerText = data.temperature.toFixed(1) + ' °C';

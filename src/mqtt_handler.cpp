@@ -4,7 +4,7 @@
 
 static WiFiClient esp_net_client;
 static PubSubClient mqtt_client(esp_net_client);
-static String current_broker = "192.168.211.175";
+static char current_broker[64] = "192.168.211.175";  // char[]: stable c_str() pointer, no heap
 static uint16_t current_port = 1883;
 static unsigned long last_reconnect_attempt = 0;
 
@@ -91,11 +91,12 @@ static void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
 void initMqtt(const char* broker_host, uint16_t port) {
   if (broker_host != nullptr && strlen(broker_host) > 0) {
-    current_broker = broker_host;
+    strncpy(current_broker, broker_host, sizeof(current_broker) - 1);
+    current_broker[sizeof(current_broker) - 1] = '\0';  // Ensure null-termination
   }
   current_port = port;
   mqtt_client.setBufferSize(512); // Allow longer debug payloads (default is 256 bytes)
-  mqtt_client.setServer(current_broker.c_str(), current_port);
+  mqtt_client.setServer(current_broker, current_port);
   mqtt_client.setCallback(mqttCallback);
 }
 
@@ -108,11 +109,14 @@ static bool reconnectMqtt() {
     return false;
   }
   
-  String client_id = "roof_water_sensor_" + String(ESP.getChipId(), HEX);
-  if (mqtt_client.connect(client_id.c_str())) {
-    Serial.println("MQTT connected to broker: " + current_broker);
+  // Use char[] to avoid heap String allocation on every reconnect attempt
+  char client_id[32];
+  snprintf(client_id, sizeof(client_id), "roof_water_sensor_%x", ESP.getChipId());
+  if (mqtt_client.connect(client_id)) {
+    Serial.printf("MQTT connected to broker: %s\n", current_broker);
     mqtt_client.subscribe("roof/tank_water/control");
     mqtt_client.publish("roof/log", "ESP8266 Water Sensor Connected");
+    mqtt_client.publish("roof/sensor/version", FIRMWARE_VERSION, true); // Retained: visible without device online
     delay(100); // Allow broker time to push retained message into TCP buffer
     mqtt_client.loop(); // Drain TCP buffer: fires mqttCallback for retained "ota" immediately
     return true;

@@ -5,7 +5,6 @@
 #include "WiFiManager.h"
 #include <FS.h>  
 #include <ArduinoJson.h>
-#include <ESP8266HTTPClient.h>
 #include <time.h>
 #include "sensor_filter.h"
 #include "web_server_handler.h"
@@ -39,7 +38,6 @@ long duration = 0;
 int fakeCount = 0;
 extern const int ledcount = 9;
 
-HTTPClient http;
 
 void handleRoot() {
   if (server) {
@@ -69,7 +67,7 @@ int readSpiffsConfig() {
         size_t size = configFile.size();
         std::unique_ptr<char[]> buf(new char[size]);
         configFile.readBytes(buf.get(), size);
-        DynamicJsonBuffer jsonBuffer;
+        StaticJsonBuffer<256> jsonBuffer;  // Stack-allocated: no heap fragmentation
         JsonObject& json = jsonBuffer.parseObject(buf.get());
         
         if (json.success()) {
@@ -101,7 +99,7 @@ void wifiManagerSetup(WiFiManager& wifiManager) {
 
 void saveConfig() {
   Serial.println("saveConfig: Saving Config to SPIFFS");
-  DynamicJsonBuffer jsonBuffer;
+  StaticJsonBuffer<256> jsonBuffer;  // Stack-allocated: no heap fragmentation
   JsonObject& json = jsonBuffer.createObject();
   json["speed_of_sound"] = speed_of_sound;
   json["tank_bottom_distance"] = tank_bottom_distance;
@@ -124,9 +122,9 @@ int rrr = readSpiffsConfig();
 void setup() {
   Serial.begin(115200);
   Serial.println();
+  Serial.printf("Firmware Version: %s\n", FIRMWARE_VERSION);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
-  http.setReuse(true);
 
   WiFiManager wifiManager;
   wifiManagerSetup(wifiManager);
@@ -224,9 +222,10 @@ void loop() {
     distance_to_water = applyEma(distance_to_water, raw_median, 0.25f);
   }
 
-  long water_level = String(tank_bottom_distance).toInt() - distance_to_water;
+  // Use atol/atof instead of String(char*) to avoid heap allocation churn
+  long water_level = atol(tank_bottom_distance) - distance_to_water;
 
-  float max_level_float = String(max_water_level).toFloat();
+  float max_level_float = atof(max_water_level);
   int normalized_level = calculateNormalizedLevel(water_level, max_level_float, ledcount);
 
   float pct = (max_level_float > 0.0f) ? ((float)water_level / max_level_float) * 100.0f : 0.0f;
@@ -238,17 +237,18 @@ void loop() {
 
   if (isMqttDebugEnabled()) {
     char dbgBuf[256];
-    snprintf(dbgBuf, sizeof(dbgBuf), 
+    snprintf(dbgBuf, sizeof(dbgBuf),
       "DIAG: raw_median=%ld cm, smoothed_dist=%ld cm, tank_bottom=%ld cm, water_level=%ld cm, max_water=%ld cm, pct=%.1f%%, temp=%.1f C, hum=%.1f %%",
-      raw_median, distance_to_water, String(tank_bottom_distance).toInt(), water_level, String(max_water_level).toInt(), pct, env.temperature, env.humidity);
+      raw_median, distance_to_water, atol(tank_bottom_distance), water_level, atol(max_water_level), pct, env.temperature, env.humidity);
     publishMqttDebug(dbgBuf);
   }
 
-  Serial.println("raw_median = " + String(raw_median));
-  Serial.println("distance_to_water (smoothed) = " + String(distance_to_water));
-  Serial.println("water_level = " + String(water_level));
-  Serial.println("normalized_level = " + String(normalized_level));
-
+  // Use Serial.printf to avoid temporary String heap allocations
+  Serial.printf("raw_median = %ld\n", raw_median);
+  Serial.printf("distance_to_water (smoothed) = %ld\n", distance_to_water);
+  Serial.printf("water_level = %ld\n", water_level);
+  Serial.printf("normalized_level = %d\n", normalized_level);
+  Serial.printf("[HEAP] Free: %u bytes\n", ESP.getFreeHeap());  // Monitor for memory leaks
   digitalWrite(LED_BUILTIN, LOW);
 
   // Give 2-second window for incoming MQTT control commands and Web UI requests

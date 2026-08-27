@@ -14,9 +14,9 @@ extern char max_water_level[6];
 extern long distance_to_water;
 extern const int ledcount;
 extern void saveConfig();
-extern void wifiManagerSetup(WiFiManager& wifiManager);
 
 static ESP8266WebServer* server_ref = nullptr;
+static bool ota_in_progress = false;
 
 void initWebServer(std::unique_ptr<ESP8266WebServer>& server_ptr) {
   server_ptr.reset(new ESP8266WebServer(WiFi.localIP(), 80));
@@ -24,6 +24,7 @@ void initWebServer(std::unique_ptr<ESP8266WebServer>& server_ptr) {
 
   // Root Dashboard Route
   server_ref->on("/", HTTP_GET, []() {
+    server_ref->sendHeader("Connection", "close");
     server_ref->send(200, "text/html", INDEX_HTML);
   });
 
@@ -76,6 +77,7 @@ void initWebServer(std::unique_ptr<ESP8266WebServer>& server_ptr) {
 
     char response[640];  // Stack-allocated: avoids heap String churn on every poll
     root.printTo(response, sizeof(response));
+    server_ref->sendHeader("Connection", "close");
     server_ref->send(200, "application/json", response);
   });
 
@@ -123,21 +125,31 @@ void initWebServer(std::unique_ptr<ESP8266WebServer>& server_ptr) {
   }, []() {
     HTTPUpload& upload = server_ref->upload();
     if (upload.status == UPLOAD_FILE_START) {
+      ota_in_progress = true;
+      WiFi.setSleepMode(WIFI_NONE_SLEEP);
       Serial.printf("OTA Update Started: %s\n", upload.filename.c_str());
       uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & ~0xFFF;
-      if (!Update.begin(maxSketchSpace)) {
+      if (!Update.begin(maxSketchSpace, U_FLASH)) {
         Update.printError(Serial);
+        ota_in_progress = false;
       }
     } else if (upload.status == UPLOAD_FILE_WRITE) {
+      yield();
+      ESP.wdtFeed();
       if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
         Update.printError(Serial);
       }
     } else if (upload.status == UPLOAD_FILE_END) {
+      ota_in_progress = false;
       if (Update.end(true)) {
         Serial.printf("OTA Update Success: %u bytes. Rebooting...\n", upload.totalSize);
       } else {
         Update.printError(Serial);
       }
+    } else if (upload.status == UPLOAD_FILE_ABORTED) {
+      Update.end();
+      ota_in_progress = false;
+      Serial.println("OTA Update Aborted");
     }
   });
 
@@ -176,4 +188,8 @@ void handleWebRoutes() {
   if (server_ref) {
     server_ref->handleClient();
   }
+}
+
+bool isOtaInProgress() {
+  return ota_in_progress;
 }

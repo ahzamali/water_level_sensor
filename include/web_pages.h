@@ -212,17 +212,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             dbgEl.style.color = 'var(--text-muted)';
           }
 
-          if(data.stay_awake_remaining_sec > 0) {
-            let m = Math.floor(data.stay_awake_remaining_sec / 60);
-            let s = data.stay_awake_remaining_sec % 60;
-            document.getElementById('powerModeVal').innerText = 'Stay-Awake';
-            document.getElementById('powerModeVal').style.color = 'var(--success)';
-            document.getElementById('powerModeSub').innerText = 'Remaining: ' + m + 'm ' + s + 's';
-          } else {
-            document.getElementById('powerModeVal').innerText = 'Deep Sleep';
-            document.getElementById('powerModeVal').style.color = 'var(--warning)';
-            document.getElementById('powerModeSub').innerText = 'Cycle: 1 min';
-          }
+          document.getElementById('powerModeVal').innerText = 'Always-On';
+          document.getElementById('powerModeVal').style.color = 'var(--success)';
+          document.getElementById('powerModeSub').innerText = 'Continuous 24/7 (60s Interval)';
 
           document.getElementById('mqttVal').innerText = data.mqtt_connected ? 'Connected' : 'Offline';
           document.getElementById('mqttVal').style.color = data.mqtt_connected ? 'var(--success)' : 'var(--danger)';

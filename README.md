@@ -80,15 +80,135 @@ mosquitto_pub -h YOUR_MQTT_BROKER_IP -t "roof/tank_water/control" -m "sleep"
 
 ---
 
-## Hardware Wiring Guide (NodeMCU v2)
+## Hardware Wiring & Connection Diagrams
 
-| ESP8266 Pin | Connected Component | Function |
-| :--- | :--- | :--- |
-| `D2` (GPIO4) | HC-SR04 Trigger | Ultrasonic Pulse Output |
-| `D1` (GPIO5) | HC-SR04 Echo | Ultrasonic Pulse Input |
-| `D5` (GPIO14) | DHT11 Signal | Temperature / Humidity Data |
-| `D2` (SDA) / `D1` (SCL) | BME280 Module | I2C Sensor Bus (`0x76` / `0x77`) |
-| `D0` / `D4` | Built-in LED | Visual Indicator / Heartbeat |
+### 1. Visual Connection Diagram (Mermaid)
+
+```mermaid
+flowchart LR
+    subgraph ESP8266["ESP8266 NodeMCU v2"]
+        VU["VIN / VU (5V)"]
+        3V3["3V3 (3.3V)"]
+        GND["GND"]
+        D7["D7 (GPIO13)"]
+        D6["D6 (GPIO12)"]
+        D2["D2 (GPIO4 / SDA)"]
+        D1["D1 (GPIO5 / SCL)"]
+        D5["D5 (GPIO14)"]
+    end
+
+    subgraph US["Ultrasonic Sensor (HC-SR04 / JSN-SR04T)"]
+        US_VCC["VCC"]
+        US_TRIG["TRIG"]
+        US_ECHO["ECHO"]
+        US_GND["GND"]
+    end
+
+    subgraph BME["BME280 Sensor (I2C)"]
+        BME_VIN["VIN"]
+        BME_GND["GND"]
+        BME_SDA["SDA"]
+        BME_SCL["SCL"]
+    end
+
+    subgraph DHT["DHT11 Sensor"]
+        DHT_VCC["VCC"]
+        DHT_DATA["DATA"]
+        DHT_GND["GND"]
+    end
+
+    %% Ultrasonic Connections
+    VU -->|5V DC| US_VCC
+    GND --- US_GND
+    D7 -->|Trigger Pulse| US_TRIG
+    US_ECHO -->|Echo Pulse (via divider)| D6
+
+    %% BME280 Connections
+    3V3 -->|3.3V DC| BME_VIN
+    GND --- BME_GND
+    D2 <-->|I2C SDA| BME_SDA
+    D1 -->|I2C SCL| BME_SCL
+
+    %% DHT11 Connections
+    3V3 -->|3.3V DC| DHT_VCC
+    GND --- DHT_GND
+    D5 <-->|Data Signal| DHT_DATA
+```
+
+---
+
+### 2. Physical Pinout Schematic (ASCII)
+
+```text
+               +-----------------------------------+
+               |       ESP8266 NodeMCU v2          |
+               |                                   |
+               | [VIN/VU] ---+ (5V)                |
+               | [3V3]    ---|---+ (3.3V)          |
+               | [GND]    ---|---|---+ (GND)       |
+               |             |   |   |             |
+               | [D7/GPIO13] |   |   |             |
+               | [D6/GPIO12] |   |   |             |
+               | [D2/GPIO4]  |   |   |             |
+               | [D1/GPIO5]  |   |   |             |
+               | [D5/GPIO14] |   |   |             |
+               +-------------|---|---|-------------+
+                             |   |   |
+      +----------------------+   |   |
+      |                          |   |
+      |   +----------------------+   |
+      |   |                          |
+      |   |   +----------------------+
+      |   |   |
+      |   |   |   +-------------------------------+
+      |   |   +-->| HC-SR04 / JSN-SR04T (5V)      |
+      +---------->| VCC                           |
+      |   |       | TRIG <--- D7 (GPIO13)         |
+      |   |       | ECHO ---> D6 (GPIO12) [Note 1]|
+      |   |       | GND  <--- Common GND          |
+      |   |       +-------------------------------+
+      |   |
+      |   |       +-------------------------------+
+      |   +------>| BME280 Sensor (3.3V I2C)      |
+      |   |       | VIN                           |
+      |   |       | GND  <--- Common GND          |
+      |   |       | SDA  <--- D2 (GPIO4 / I2C)    |
+      |   |       | SCL  <--- D1 (GPIO5 / I2C)    |
+      |   |       +-------------------------------+
+      |   |
+      |   |       +-------------------------------+
+      |   +------>| DHT11 Sensor (3.3V)           |
+      |           | VCC                           |
+      |           | DATA <--- D5 (GPIO14)         |
+      +---------->| GND  <--- Common GND          |
+                  +-------------------------------+
+
+[Note 1] Optional Voltage Divider for 5V HC-SR04 Echo Pin:
+         HC-SR04 ECHO ---> [ 1kΩ ] ---+---> ESP8266 D6 (GPIO12)
+                                      |
+                                   [ 2kΩ ]
+                                      |
+                                     GND
+```
+
+---
+
+### 3. Pin Mapping Table
+
+| Component | Component Pin | ESP8266 Pin | NodeMCU GPIO | Voltage | Function / Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **HC-SR04 / JSN-SR04T** | `VCC` | `VIN` / `VU` | — | 5V | Sensor power supply |
+| | `TRIG` | `D7` | `GPIO13` | 3.3V | Ultrasonic trigger pulse output |
+| | `ECHO` | `D6` | `GPIO12` | 3.3V / 5V | Echo pulse input (use divider if 5V) |
+| | `GND` | `GND` | — | 0V | Common ground |
+| **BME280** | `VIN` | `3V3` | — | 3.3V | I2C sensor power supply |
+| | `GND` | `GND` | — | 0V | Common ground |
+| | `SDA` | `D2` | `GPIO4` | 3.3V | I2C Data bus (`0x76` / `0x77`) |
+| | `SCL` | `D1` | `GPIO5` | 3.3V | I2C Clock bus |
+| **DHT11 / DHT22** | `VCC` | `3V3` | — | 3.3V | Sensor power supply |
+| | `DATA` | `D5` | `GPIO14` | 3.3V | Single-wire communication |
+| | `GND` | `GND` | — | 0V | Common ground |
+| **Status LED** | Built-in | `D4` / `LED_BUILTIN` | `GPIO2` | 3.3V | Heartbeat & ping activity indicator |
 
 ---
 

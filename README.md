@@ -1,5 +1,7 @@
 # ESP8266 Ultrasonic Water Level & Environmental Sensor
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A modular, high-accuracy ESP8266 NodeMCU firmware built with **PlatformIO**. It measures roof tank water level using ultrasonic distance sensing, monitors ambient temperature and humidity, provides an embedded Web UI Dashboard with Web OTA firmware upload capabilities, and publishes telemetry via MQTT.
 
 ---
@@ -258,3 +260,10 @@ pio run -t upload
 ```powershell
 pio device monitor -b 115200
 ```
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
